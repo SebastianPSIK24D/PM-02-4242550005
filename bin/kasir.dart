@@ -81,7 +81,7 @@ void main() {
 
   tampilkanKatalog(katalog);
 
-  stdout.write('Pesanan (contoh: P01x2, P03x1): ');
+  stdout.write('Pesanan: ');
   final String input = stdin.readLineSync() ?? ''; // String? -> ganti ''
 
   final HasilUrai hasil = uraiPesanan(input, katalog);
