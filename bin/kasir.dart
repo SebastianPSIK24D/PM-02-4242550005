@@ -14,10 +14,16 @@ const int lebarKode = 6;
 const int lebarNama = 24;
 const int lebarHarga = 10;
 const int lebarTabel = lebarKode + lebarNama + lebarHarga;
+const int lebarQty = 6;
+const int lebarSubtotal = 10;
 
 // Pemisah format pesanan
 const String pemisahItem = ',';
 const String pemisahJumlah = 'x';
+
+// Diskon, total minimal Rp100.000 dapat diskon 10%
+const int batasDiskon = 100000;
+const int persenDiskon = 10;
 
 /// Mencetak katalog sebagai tabel
 void tampilkanKatalog(Map<String, Produk> katalog) {
@@ -62,11 +68,47 @@ HasilUrai uraiPesanan(String input, Map<String, Produk> katalog) {
       continue;
     }
 
-    
-    diterima.add((kode: kode, produk: produk, qty: qty)); // Produk dan qty pasti non-null, jadi tanpa operator !
+    diterima.add((
+      kode: kode,
+      produk: produk,
+      qty: qty,
+    )); // Produk dan qty non-null
   }
 
   return (diterima: diterima, ditolak: ditolak);
+}
+
+/// Ringkasan, label di kiri, nilai di kanan
+String barisRingkasan(String label, int nilai) {
+  return label.padRight(lebarNama + lebarQty) +
+      nilai.toString().padLeft(lebarSubtotal);
+}
+
+/// Cetak Struk
+void tampilkanStruk(List<ItemPesanan> diterima) {
+  // Subtotal tiap item (map), lalu total semuanya (fold)
+  final List<int> subtotal = diterima
+      .map((d) => d.produk.harga * d.qty)
+      .toList();
+  final int total = subtotal.fold<int>(0, (jumlah, n) => jumlah + n);
+  final int diskon = total >= batasDiskon ? total * persenDiskon ~/ 100 : 0;
+  final int bayar = total - diskon;
+  final Set<String> kategori = diterima.map((d) => d.produk.kategori).toSet();
+
+  print('');
+  print('Struk Belanja');
+  for (var i = 0; i < diterima.length; i++) {
+    final ItemPesanan d = diterima[i];
+    print(
+      '${d.produk.nama.padRight(lebarNama)}'
+      '${'${d.qty} x'.padLeft(lebarQty)}'
+      '${subtotal[i].toString().padLeft(lebarSubtotal)}',
+    );
+  }
+  print(barisRingkasan('Total', total));
+  print(barisRingkasan('Diskon $persenDiskon%', diskon));
+  print(barisRingkasan('Bayar', bayar));
+  print('Kategori dibeli : ${kategori.join(', ')}');
 }
 
 void main() {
@@ -86,7 +128,13 @@ void main() {
 
   final HasilUrai hasil = uraiPesanan(input, katalog);
 
-  // input
-  print('Diterima : ${hasil.diterima.length} item');
-  print('Ditolak  : ${hasil.ditolak}');
+  if (hasil.diterima.isEmpty) {
+    print('\nTidak ada item valid.');
+  } else {
+    tampilkanStruk(hasil.diterima);
+  }
+
+  if (hasil.ditolak.isNotEmpty) {
+    print('Diabaikan : ${hasil.ditolak.join(', ')}');
+  }
 }
